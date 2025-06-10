@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Grid,
   Box,
@@ -15,6 +15,11 @@ import {
   Chip,
   IconButton,
   Stack,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField
 } from "@mui/material";
 
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
@@ -26,25 +31,28 @@ import EditIcon from "@mui/icons-material/Edit";
 const mockTasks = [
   {
     title: "Design Homepage",
-    description: "Designing a homepage involves creating a visually appealing and functional entry point for a website.",
+    description:
+      "Designing a homepage involves creating a visually appealing and functional entry point for a website.",
     category: "Website Redesign",
     assignee: "John Doe",
-    dueDate: "Jul 15, 2025",
+    dueDate: "2025-07-15",
     status: "In Progress",
     priority: "High",
   },
   {
     title: "Implement Responsive CSS",
-    description: "Implementing Responsive CSS ensures that a website adapts seamlessly to different screen sizes and devices.",
+    description:
+      "Implementing Responsive CSS ensures that a website adapts seamlessly to different screen sizes and devices.",
     category: "Website Redesign",
     assignee: "John Doe",
-    dueDate: "Jul 25, 2025",
+    dueDate: "2025-07-25",
     status: "Done",
     priority: "High",
   },
   {
     title: "UI design",
-    description: "UI design focuses on creating visually appealing and user-friendly interfaces for digital products like websites and apps.",
+    description:
+      "UI design (User Interface design) focuses on creating visually appealing and user-friendly interfaces for digital products like websites and apps.",
     category: "Website Redesign",
     assignee: "John Doe",
     dueDate: "2025-08-25",
@@ -53,7 +61,13 @@ const mockTasks = [
   },
 ];
 
-// Embedded TaskCard component
+// Sub-component: TaskCard
+const statusColors = {
+  "To Do": "default",
+  "In Progress": "primary",
+  Done: "success",
+};
+
 const TaskCard = ({ task, onEdit }) => {
   const { title, description, category, assignee, dueDate, status } = task;
 
@@ -62,12 +76,6 @@ const TaskCard = ({ task, onEdit }) => {
     month: "short",
     day: "numeric",
   });
-
-  const statusColors = {
-    "To Do": "default",
-    "In Progress": "primary",
-    Done: "success",
-  };
 
   return (
     <Card elevation={2} sx={{ minHeight: 200 }}>
@@ -113,20 +121,91 @@ const TaskCard = ({ task, onEdit }) => {
   );
 };
 
-// Main TaskBoard component
-const TaskBoard = () => {
+// Sub-component: Addtaskform
+const Addtaskform = ({ open, handleClose, onSubmitTask, initialData }) => {
+  const [form, setForm] = useState({
+    title: "",
+    description: "",
+    category: "",
+    assignee: "",
+    dueDate: "",
+    status: "To Do",
+  });
+
+  useEffect(() => {
+    if (initialData) {
+      setForm(initialData);
+    } else {
+      setForm({
+        title: "",
+        description: "",
+        category: "",
+        assignee: "",
+        dueDate: "",
+        status: "To Do",
+      });
+    }
+  }, [initialData]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm({ ...form, [name]: value });
+  };
+
+  const handleSubmit = () => {
+    onSubmitTask(form);
+    handleClose();
+    setForm({
+      title: "",
+      description: "",
+      category: "",
+      assignee: "",
+      dueDate: "",
+      status: "To Do",
+    });
+  };
+
+  return (
+    <Dialog open={open} onClose={handleClose}>
+      <DialogTitle>{initialData ? "Edit Task" : "Add New Task"}</DialogTitle>
+      <DialogContent>
+        <TextField fullWidth label="Title" name="title" value={form.title} onChange={handleChange} margin="dense" />
+        <TextField fullWidth label="Description" name="description" value={form.description} onChange={handleChange} margin="dense" />
+        <TextField fullWidth label="Category" name="category" value={form.category} onChange={handleChange} margin="dense" />
+        <TextField fullWidth label="Assignee" name="assignee" value={form.assignee} onChange={handleChange} margin="dense" />
+        <TextField fullWidth type="date" label="Due Date" name="dueDate" value={form.dueDate} onChange={handleChange} InputLabelProps={{ shrink: true }} margin="dense" />
+        <FormControl fullWidth margin="dense">
+          <InputLabel>Status</InputLabel>
+          <Select name="status" value={form.status} onChange={handleChange} label="Status">
+            <MenuItem value="To Do">To Do</MenuItem>
+            <MenuItem value="In Progress">In Progress</MenuItem>
+            <MenuItem value="Done">Done</MenuItem>
+          </Select>
+        </FormControl>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={handleClose}>Cancel</Button>
+        <Button variant="contained" onClick={handleSubmit}>
+          {initialData ? "Update" : "Add"}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
+// Main Component
+const Tasks = () => {
   const [tasks, setTasks] = useState(mockTasks);
   const [openEdit, setOpenEdit] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
-
   const [statusFilter, setStatusFilter] = useState("");
 
   const resetFilters = () => {
     setStatusFilter("");
   };
 
-  const filteredTasks = tasks.filter(task =>
-    (statusFilter ? task.status === statusFilter : true)
+  const filteredTasks = tasks.filter((task) =>
+    statusFilter ? task.status === statusFilter : true
   );
 
   const handleEditTask = (task) => {
@@ -135,14 +214,16 @@ const TaskBoard = () => {
   };
 
   const handleUpdateTask = (updatedTask) => {
-    setTasks(tasks.map(t => t === selectedTask ? updatedTask : t));
+    setTasks(tasks.map((t) => (t === selectedTask ? updatedTask : t)));
     setOpenEdit(false);
     setSelectedTask(null);
   };
 
   return (
     <Box p={3}>
-      <Typography variant="h5" fontWeight="bold" mb={3}>Team-Member-Tasks</Typography>
+      <Typography variant="h5" fontWeight="bold" mb={3}>
+        Team-Member-Tasks
+      </Typography>
 
       <TableContainer component={Paper} sx={{ mb: 3, p: 2 }}>
         <Box display="flex" gap={2}>
@@ -151,12 +232,16 @@ const TaskBoard = () => {
             <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
               <MenuItem value="">All</MenuItem>
               {["To Do", "In Progress", "Done"].map((status) => (
-                <MenuItem key={status} value={status}>{status}</MenuItem>
+                <MenuItem key={status} value={status}>
+                  {status}
+                </MenuItem>
               ))}
             </Select>
           </FormControl>
 
-          <Button variant="contained" color="primary" onClick={resetFilters}>Clear Filters</Button>
+          <Button variant="contained" color="primary" onClick={resetFilters}>
+            Clear Filters
+          </Button>
         </Box>
       </TableContainer>
 
@@ -170,7 +255,10 @@ const TaskBoard = () => {
 
       <Addtaskform
         open={openEdit}
-        handleClose={() => { setOpenEdit(false); setSelectedTask(null); }}
+        handleClose={() => {
+          setOpenEdit(false);
+          setSelectedTask(null);
+        }}
         onSubmitTask={handleUpdateTask}
         initialData={selectedTask}
       />
