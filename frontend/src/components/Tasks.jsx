@@ -23,8 +23,6 @@ import FolderIcon from "@mui/icons-material/Folder";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import EditIcon from "@mui/icons-material/Edit";
 
-import Addtaskform from "./Addtaskform"; // Assuming this is still external
-
 const mockTasks = [
   {
     title: "Design Homepage",
@@ -180,4 +178,4 @@ const TaskBoard = () => {
   );
 };
 
-export default TaskBoard;
+export default Tasks;
